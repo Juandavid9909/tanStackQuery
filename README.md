@@ -61,6 +61,7 @@ function App() {
         refetchOnWindowFocus: false, // Si es true, se hace refetch al volver a la pestaña
         retry: 2, // Número de reintentos en caso de error, false si no queremos que se reintente
         retryDelay: 1000, // Tiempo en milisegundos entre reintentos
+        enabled: ourOtherQuery.data !== undefined, // Hacer que sea dependiente de otro query
     });
 
     return (
@@ -83,3 +84,59 @@ function App() {
 
 export default App;
 ```
+
+
+# prefetchQuery
+
+Para brindar una mejor experiencia de usuario, se puede usar el prefetchQuery antes de que el usuario de clic a alguna opción para ver los datos, esto nos permitirá tener los datos listo para que el usuario pueda ver la información:
+
+```jsx
+import { FiInfo, FiMessageSquare, FiCheckCircle } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { getIssue, getIssueComments } from '../actions';
+import { GithubIssue, State } from '../interfaces';
+
+interface Props {
+    issue: GithubIssue;
+}
+
+export const IssueItem = ({ issue }: Props) => {
+    const navigate = useNavigate();
+
+    const queryClient = useQueryClient();
+
+    const prefetchData = () => {
+        queryClient.prefetchQuery({
+            queryKey: ['issues', issue.number],
+            queryFn: () => getIssue(issue.number),
+            staleTime: 1000 * 60,
+        });
+
+        queryClient.prefetchQuery({
+            queryKey: ['issues', issue.number, 'comments'],
+            queryFn: () => getIssueComments(issue.number),
+            staleTime: 1000 * 60,
+        });
+    };
+
+    return (
+        <div onMouseEnter={ prefetchData }>{ issue.number }</div>
+    );
+};
+```
+
+
+# setQueryData
+
+Esto lo que nos permitirá hacer es dejar seteada la data de un query que tengamos previamente para no tener que realizar la búsqueda por el tiempo que nosotros queramos mantener dicho dato cacheado. Usando el mismo evento onMouseEnter del ejemplo pasado podríamos colocar la siguiente función:
+
+```jsx
+const  presetData  =  ()  => {
+    queryClient.setQueryData(['issues', issue.number], issue, {
+        updatedAt: Date.now() + (1000  *  60),
+    });
+};
+```
+
