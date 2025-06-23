@@ -4,18 +4,18 @@ import { IssueList } from '../components/IssueList';
 import { LabelPicker } from '../components/LabelPicker';
 import { LoadingSpinner } from '../../shared';
 import { State } from '../interfaces';
-import { useIssues } from '../hooks';
+import { useIssuesInfinite } from '../hooks';
 
-export const ListView = () => {
+export const ListViewInfinite = () => {
   const [state, setState] = useState<State>(State.All);
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
 
-  const { issuesQuery, page, nextPage, previousPage } = useIssues({
+  const { issuesQuery } = useIssuesInfinite({
     state,
     selectedLabels,
   });
 
-  const issues = issuesQuery.data ?? [];
+  const issues = issuesQuery.data?.pages.flat() ?? [];
 
   const onLabelSelected = (label: string) => {
     if(selectedLabels.includes(label)) {
@@ -35,31 +35,25 @@ export const ListView = () => {
               <LoadingSpinner />
             )
             : (
-              <>
+              <div className="flex flex-col justify-center">
                 <IssueList
                   issues={ issues }
                   onStateChange={ setState }
                   state={ state }
                 />
 
-                <div className="flex justify-between items-center">
-                  <button
-                    className="p-2 bg-blue-500 rounded-md hover:bg-blue-700 transition-all"
-                    onClick={ previousPage }
-                  >
-                    Anteriores
-                  </button>
-
-                  <span>{ page }</span>
-
-                  <button
-                    className="p-2 bg-blue-500 rounded-md hover:bg-blue-700 transition-all"
-                    onClick={ nextPage }
-                  >
-                    Siguientes
-                  </button>
-                </div>
-              </>
+                <button
+                  className="p-2 bg-blue-500 rounded-md hover:bg-blue-700 transition-all disabled:bg-gray-500"
+                  disabled={ issuesQuery.isFetchingNextPage }
+                  onClick={ () => issuesQuery.fetchNextPage() }
+                >
+                  {
+                    issuesQuery.isFetchingNextPage
+                      ? 'Cargando más...'
+                      : 'Cargar más...'
+                  }
+                </button>
+              </div>
             )
         }
       </div>
