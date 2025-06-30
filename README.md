@@ -140,3 +140,42 @@ const  presetData  =  ()  => {
 };
 ```
 
+
+# Mutaciones
+
+Estas son usadas para crear, actualizar y eliminar elementos en un endpoint, y son sumamente útiles para estados, controlar cacheos posteriormente y demás.
+
+```jsx
+import { useMutation } from "@tanstack/react-query";
+
+import { productActions } from "..";
+
+export const useProductMutation = () => {
+    const  queryClient  =  useQueryClient();
+
+    const mutation = useMutation({
+        mutationFn: productActions.createProduct,
+        onSuccess: (data)  => {
+            // queryClient.invalidateQueries(
+            //     ["products", { filterKey: data.category }]
+            // ); // Invalida el query para que traiga los datos nuevamente
+
+            // Mejor forma para evitar llamados al back
+            queryClient.setQueryData<Product[]>(
+                ["products", { filterKey: product.category }],
+                (old)  => {
+                    if(!old) return [product];
+
+                    return [...old, product];
+                },
+            );
+        },
+        onSettled: ()  => {
+            console.log("onSettled");
+        },
+    });
+
+    return  mutation;
+};
+```
+
